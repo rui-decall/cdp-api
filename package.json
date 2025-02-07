@@ -1,0 +1,25 @@
+{
+  "name": "queue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-sqs": "^3.741.0",
+    "dotenv": "^16.4.5",
+    "serverless-lift": "^1.30.3",
+    "serverless-offline": "^14.4.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@coinbase/coinbase-sdk": "^0.17.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "serverless-http": "^3.2.0"
+  }
+}

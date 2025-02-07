@@ -1,0 +1,34 @@
+service: payphone-queue
+frameworkVersion: '4'
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-southeast-1
+  profile: personal
+  stage: dev
+
+constructs:
+  jobs:
+    type: queue
+    worker:
+      handler: index.consumer
+    # batchSize: 100
+    # maxConcurrency: 10
+    # maxBatchingWindow: 1
+
+functions:
+  api:
+    handler: index.api
+    events:
+      - httpApi: '*'
+    environment:
+      QUEUE_URL: ${construct:jobs.queueUrl}
+      CB_API_KEY_NAME: ${env:CB_API_KEY_NAME}
+      CB_PRIVATE_KEY: ${env:CB_PRIVATE_KEY}
+      CB_COMMERCE_API_KEY: ${env:CB_COMMERCE_API_KEY}
+
+plugins:
+  - serverless-lift
+  - serverless-offline
