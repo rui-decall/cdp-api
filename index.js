@@ -4,7 +4,10 @@ import express from "express";
 import cors from 'cors'
 import { createWallet } from "./util.js";
 import { Coinbase, Wallet } from "@coinbase/coinbase-sdk";
+import { parseEther } from "viem";
 import fs from 'fs'
+
+Coinbase.configure({ apiKeyName: process.env.CB_API_KEY_NAME, privateKey: process.env.CB_PRIVATE_KEY, useServerSigner: true })
 const abi = JSON.parse(fs.readFileSync('./abi.json', 'utf8'))
 // import abi from './abi.json' with {type: 'json'}  
 const app = express();
@@ -41,7 +44,7 @@ app.post('/charges', async (req, res) => {
     booking_description,
     amount,
     booking_id
-  } = JSON.parse(req.body)
+  } = req.body
 
   console.log('charges', booking_name, booking_description, amount, booking_id)
 
@@ -103,7 +106,7 @@ app.post('/charges/:charge_id/pay', async (req, res) => {
   const invoke = await wallet.invokeContract({
     abi,
     contractAddress: hydrate.data.web3_data.transfer_intent.metadata.contract_address,
-    assetId: "Eth",
+    assetId: Coinbase.assets.Wei,
     method: "swapAndTransferUniswapV3Native",
     args: {
       _intent: [
@@ -120,7 +123,7 @@ app.post('/charges/:charge_id/pay', async (req, res) => {
       ],
       poolFeesTier: poolFeesTier.toString()
     },
-    amount: hydrate.data.pricing.local.amount * 1.5,
+    amount: parseEther((hydrate.data.pricing.local.amount * 1.05).toString())
 
   })
 
@@ -131,9 +134,10 @@ app.post('/charges/:charge_id/pay', async (req, res) => {
   //   "address_id": "0x23b13069BDf2814BBAB268719601CC0a4C1f7c65"
   // })
 
-  // await invoke.wait()
-  
-  return res.json({ ok: true })
+  const result = await invoke.wait()
+  console.log("result", JSON.stringify(result))
+
+  return res.json({ tx: result.getTransactionHash(), result })
 })
 
 const consumer = async (event) => {

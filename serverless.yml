@@ -21,6 +21,7 @@ constructs:
 functions:
   api:
     handler: index.api
+    timeout: 30
     events:
       - httpApi: '*'
     environment:

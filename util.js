@@ -6,7 +6,6 @@
 
 import {  Coinbase, Wallet } from "@coinbase/coinbase-sdk";
 
-Coinbase.configure({apiKeyName: process.env.CB_API_KEY_NAME, privateKey: process.env.CB_PRIVATE_KEY, useServerSigner: true})
 
 // export async function gaslessBroadcast() {
 

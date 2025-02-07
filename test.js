@@ -1,5 +1,6 @@
 // import { consumer } from "."
 import { createWallet } from "./util.js"
+import 'dotenv/config'
 
 const data = {
     "Records": [
