@@ -6,6 +6,8 @@ import { createWallet } from "./util.js";
 import { Coinbase, Wallet } from "@coinbase/coinbase-sdk";
 import { parseEther } from "viem";
 import fs from 'fs'
+import { initializeAgent } from "./agent.js";
+import { HumanMessage } from "@langchain/core/messages";
 
 Coinbase.configure({ apiKeyName: process.env.CB_API_KEY_NAME, privateKey: process.env.CB_PRIVATE_KEY, useServerSigner: true })
 const abi = JSON.parse(fs.readFileSync('./abi.json', 'utf8'))
@@ -18,6 +20,31 @@ app.use(express.json())
 
 app.get('/env', (req, res) => {
   res.json({ env: process.env })
+})
+
+app.post('/messages', async (req, res) => {
+  try {
+
+    const { user_message, wallet_id } = req.body
+    const { agent, config } = await initializeAgent(wallet_id)
+    config.configurable.thread_id = wallet_id
+    const stream = await agent.stream({ messages: [new HumanMessage(user_message)] }, config);
+
+    let agent_message = ""
+    let tools_message = ""
+    for await (const chunk of stream) {
+      if ("agent" in chunk) {
+        agent_message += chunk.agent.messages[0].content
+      } else if ("tools" in chunk) {
+        tools_message += chunk.tools.messages[0].content
+      }
+    }
+    res.json({ agent_message, tools_message })
+  } catch (err) {
+    console.error(err)
+    res.json({ error: err.message })
+  }
+
 })
 
 app.post('/producer', async (req, res) => {

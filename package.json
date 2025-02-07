@@ -17,7 +17,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@coinbase/agentkit": "^0.1.1",
+    "@coinbase/agentkit-langchain": "^0.1.0",
     "@coinbase/coinbase-sdk": "^0.17.0",
+    "@langchain/core": "^0.3.38",
+    "@langchain/langgraph": "^0.2.45",
+    "@langchain/openai": "^0.4.2",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "serverless-http": "^3.2.0"
