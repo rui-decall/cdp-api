@@ -29,6 +29,8 @@ functions:
       CB_API_KEY_NAME: ${env:CB_API_KEY_NAME}
       CB_PRIVATE_KEY: ${env:CB_PRIVATE_KEY}
       CB_COMMERCE_API_KEY: ${env:CB_COMMERCE_API_KEY}
+      OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+      NETWORK_ID: ${env:NETWORK_ID}
 
 plugins:
   - serverless-lift
