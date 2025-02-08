@@ -102,6 +102,9 @@ app.post('/charges', async (req, res) => {
 app.post('/charges/:charge_id/pay', async (req, res) => {
 
   const { wallet_id } = req.body
+  if (!wallet_id) {
+    return res.status(400).json({ error: "wallet_id is required" })
+  }
   const wallet = await Wallet.fetch(wallet_id)
   const hydrate = await fetch(`https://api.commerce.coinbase.com/charges/${req.params.charge_id}/hydrate`, {
     method: "PUT",
@@ -161,7 +164,7 @@ app.post('/charges/:charge_id/pay', async (req, res) => {
   //   "address_id": "0x23b13069BDf2814BBAB268719601CC0a4C1f7c65"
   // })
 
-  const result = await invoke.wait()
+  const result = await invoke.wait({ timeout: 30000 })
   console.log("result", JSON.stringify(result))
 
   return res.json({ tx: result.getTransactionHash(), result })
