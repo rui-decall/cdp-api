@@ -99,12 +99,34 @@ app.post('/charges', async (req, res) => {
   res.json({ charge_id: response.data.id })
 })
 
+app.post('/refund', async (req, res) => {
+  const { from_wallet_id, to_wallet_id,amount } = req.body
+  const wallet = await Wallet.fetch(from_wallet_id)
+  const trade = await wallet.createTrade({
+    fromAssetId: "usdc",
+    toAssetId: "eth",
+    amount: amount,
+  })
+
+  const transfer = await wallet.createTransfer({
+    amount: amount,
+    assetId: Coinbase.assets.Eth,
+    destination: to_wallet_id
+  })
+
+
+  res.json({ trade, transfer })
+})
+
 app.post('/charges/:charge_id/pay', async (req, res) => {
 
   const { wallet_id } = req.body
   if (!wallet_id) {
     return res.status(400).json({ error: "wallet_id is required" })
   }
+  console.log("wallet_id", wallet_id)
+  console.log("charge_id", req.params.charge_id)
+
   const wallet = await Wallet.fetch(wallet_id)
   const hydrate = await fetch(`https://api.commerce.coinbase.com/charges/${req.params.charge_id}/hydrate`, {
     method: "PUT",
@@ -121,11 +143,13 @@ app.post('/charges/:charge_id/pay', async (req, res) => {
   console.log("hydrate", JSON.stringify(hydrate))
 
   if (hydrate.error) {
+    console.error("hydrate error", hydrate.error)
     return res.json({ error: hydrate.error.message })
   }
 
   const balance = await wallet.getBalance(Coinbase.assets.Eth)
   if (balance < hydrate.data.pricing.local.amount) {
+    return res.json({ error: "Insufficient balance" })
     throw new Error("Insufficient balance")
   }
 
