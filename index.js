@@ -8,6 +8,11 @@ import { parseEther } from "viem";
 import fs from 'fs'
 import { initializeAgent } from "./agent.js";
 import { HumanMessage } from "@langchain/core/messages";
+import postgres from "postgres"
+import { expressjwt } from "express-jwt";
+
+
+const sql = postgres(process.env.POSTGRES_URL)
 
 Coinbase.configure({ apiKeyName: process.env.CB_API_KEY_NAME, privateKey: process.env.CB_PRIVATE_KEY, useServerSigner: true })
 const abi = JSON.parse(fs.readFileSync('./abi.json', 'utf8'))
@@ -18,17 +23,16 @@ const chain_id = 8453
 app.use(cors())
 app.use(express.json())
 
-app.get('/env', (req, res) => {
-  res.json({ env: process.env })
-})
-
-app.post('/messages', async (req, res) => {
+app.post('/messages', expressjwt({ secret: process.env.JWT_SECRET, algorithms: ['HS256'] }), async (req, res) => {
   try {
 
-    const { user_message, wallet_id } = req.body
+    console.log(req.auth)
+    const { message } = req.body
+    const { wallet_id } = await sql`SELECT wallet_id FROM users WHERE phone_number = ${req.auth.sub}`.then(o => o[0])
+    console.log("wallet_id", wallet_id)
     const { agent, config } = await initializeAgent(wallet_id)
     config.configurable.thread_id = wallet_id
-    const stream = await agent.stream({ messages: [new HumanMessage(user_message)] }, config);
+    const stream = await agent.stream({ messages: [new HumanMessage(message)] }, config);
 
     let agent_message = ""
     let tools_message = ""

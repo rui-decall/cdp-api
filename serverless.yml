@@ -31,6 +31,8 @@ functions:
       CB_COMMERCE_API_KEY: ${env:CB_COMMERCE_API_KEY}
       OPENAI_API_KEY: ${env:OPENAI_API_KEY}
       NETWORK_ID: ${env:NETWORK_ID}
+      POSTGRES_URL: ${env:POSTGRES_URL}
+      JWT_SECRET: ${env:JWT_SECRET}
 
 plugins:
   - serverless-lift
