@@ -4,6 +4,9 @@ import express from "express";
 import cors from 'cors'
 import { createWallet } from "./util.js";
 import { Coinbase, Wallet } from "@coinbase/coinbase-sdk";
+// must put before agent init
+ Coinbase.configure({ apiKeyName: process.env.CB_API_KEY_NAME, privateKey: process.env.CB_PRIVATE_KEY, useServerSigner: true })
+
 import { parseEther } from "viem";
 import fs from 'fs'
 import { initializeAgent } from "./agent.js";
@@ -14,7 +17,6 @@ import { expressjwt } from "express-jwt";
 
 const sql = postgres(process.env.POSTGRES_URL)
 
-Coinbase.configure({ apiKeyName: process.env.CB_API_KEY_NAME, privateKey: process.env.CB_PRIVATE_KEY, useServerSigner: true })
 const abi = JSON.parse(fs.readFileSync('./abi.json', 'utf8'))
 // import abi from './abi.json' with {type: 'json'}  
 const app = express();
@@ -23,12 +25,31 @@ const chain_id = 8453
 app.use(cors())
 app.use(express.json())
 
-app.post('/messages', expressjwt({ secret: process.env.JWT_SECRET, algorithms: ['HS256'] }), async (req, res) => {
+app.post('/transfer', async (req, res) => {
+  const { to, amount, wallet_id } = req.body
+  const wallet = await Wallet.fetch(wallet_id)
+  // const balance = await wallet.getBalance(Coinbase.assets.Eth)
+  // console.log("balance", balance)
+  let transfer = await wallet.createTransfer({
+    amount: amount,
+    assetId: Coinbase.assets.Eth,
+    destination: to
+  })
+  transfer = await transfer.wait({ timeoutSeconds: 30, intervalSeconds: 1 })
+    .catch(e => {
+      console.error(e)
+      return null
+    })
+  res.json({ transfer })
+})
+
+// app.post('/messages', expressjwt({ secret: process.env.JWT_SECRET, algorithms: ['HS256'] }), async (req, res) => {
+app.post('/messages', async (req, res) => {
   try {
 
-    console.log(req.auth)
+    // console.log(req.auth)
     const { message } = req.body
-    const { wallet_id } = await sql`SELECT wallet_id FROM users WHERE phone_number = ${req.auth.sub}`.then(o => o[0])
+    const { wallet_id } = await sql`SELECT wallet_id FROM users WHERE phone_number = '60175909500'`.then(o => o[0])
     console.log("wallet_id", wallet_id)
     const { agent, config } = await initializeAgent(wallet_id)
     config.configurable.thread_id = wallet_id
@@ -152,7 +173,7 @@ app.post('/charges/:charge_id/pay', async (req, res) => {
   }
 
   const balance = await wallet.getBalance(Coinbase.assets.Eth)
-  if (balance < hydrate.data.pricing.local.amount) {
+  if (balance < hydrate.data.pricing.local.amount * 1.05) {
     return res.json({ error: "Insufficient balance" })
     throw new Error("Insufficient balance")
   }
@@ -192,7 +213,7 @@ app.post('/charges/:charge_id/pay', async (req, res) => {
   //   "address_id": "0x23b13069BDf2814BBAB268719601CC0a4C1f7c65"
   // })
 
-  const result = await invoke.wait({ timeout: 30000 })
+  const result = await invoke.wait({ timeoutSeconds: 30000 })
   console.log("result", JSON.stringify(result))
 
   return res.json({ tx: result.getTransactionHash(), result })
